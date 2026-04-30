@@ -1,0 +1,27 @@
+# .NET build artifacts
+bin/
+obj/
+*.user
+*.suo
+.vs/
+.idea/
+
+# BenchmarkDotNet temp (do NOT ignore results/)
+BenchmarkDotNet.Artifacts/*/bin/
+
+# Visual Studio / Rider
+*.swp
+*.swo
+
+# OS noise
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Python analysis
+__pycache__/
+.venv/
+*.pyc
+
+# Claude Code local files
+.claude/
