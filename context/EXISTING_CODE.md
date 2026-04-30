@@ -341,3 +341,46 @@ or adjust the path to use an absolute route via `AppContext.BaseDirectory` befor
 | `--filter *SingleThread* --job Dry` — no errors | ✅ Completed 4 benchmark variants |
 | Energy CSV created in `results/linux/energy/` | ✅ `energy_single.csv` with correct columns |
 | No static mutable state in `FannkuchCore` | ✅ All state in `RunState` per call |
+
+---
+
+## 7. FannkuchCore replaced with Energy-Languages reference (2026-04-30)
+
+The SIMD-based `FannkuchCore.cs` (x86 SSE2/SSSE3/SSE4.1 intrinsics) was replaced with the
+canonical reference implementation from
+[greensoftwarelab/Energy-Languages](https://github.com/greensoftwarelab/Energy-Languages/tree/master/CSharp/fannkuch-redux),
+as required by supervisors.
+
+### Algorithm
+
+Scalar `int[]`-based implementation. Contributed by Isaac Gouy, transliterated from
+Oleg Mazurov's Java program; concurrency fix and minor improvements by Peperud.
+
+Threading: `Environment.ProcessorCount + 1` `Task.Run` threads with work-stealing via
+`Interlocked.Increment(ref taskId)`. `NCHUNKS = 150`. Final reduction via two parallel `Task` lambdas.
+
+### Adaptations for BenchmarkDotNet
+
+- All formerly-static mutable fields (`n`, `Fact`, `maxFlips`, `chkSums`, `taskId`, `CHUNKSZ`, `NTASKS`)
+  moved into a private `RunCtx` sealed class allocated fresh on every `Compute(int n)` call.
+- The original `FannkuchRedux` instance class (with `p`, `pp`, `count` per-worker) became the private
+  `Worker` sealed class inside `FannkuchCore`. Worker methods reference `ctx.Field` instead of
+  static fields; logic is otherwise unchanged.
+- `Main()` removed; `public static (int checksum, int maxFlips) Compute(int n)` exposed instead.
+- `NCHUNKS` converted from `static int` to `const int` (it was never mutated).
+
+### FannkuchSingleThread → FannkuchBenchmarks
+
+`Benchmarks/FannkuchSingleThread.cs` renamed to `Benchmarks/FannkuchBenchmarks.cs`.
+Class renamed `FannkuchSingleThread` → `FannkuchBenchmarks`.
+Call updated: `FannkuchCore.ComputeSingle(N)` → `FannkuchCore.Compute(N)`.
+CSV variant field updated: `FannkuchST` → `Fannkuch`.
+
+### Verification (2026-04-30)
+
+| Criterion | Result |
+|---|---|
+| `dotnet build -c Release` — zero warnings | ✅ 0 warnings, 0 errors |
+| `--list flat` shows `FannkuchBenchmarks.Run` | ✅ `FannkuchBenchmark.FannkuchBenchmarks.Run` |
+| Correctness: `Compute(7)` → `chk=228 maxf=16` | ✅ Exact match |
+| `--filter *FannkuchBenchmarks* --job Dry` — no errors | ✅ 4 variants completed |

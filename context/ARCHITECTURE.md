@@ -47,8 +47,8 @@ csharp-energy-benchmark/
 │   │   └── FannkuchBenchmark/
 │   │       ├── FannkuchBenchmark.csproj   (.NET 9, Windows TFM)
 │   │       ├── Benchmarks/
-│   │       │   ├── FannkuchSingleThread.cs
-│   │       │   └── FannkuchMultiThread.cs
+│   │       │   ├── FannkuchCore.cs          (Energy-Languages reference algorithm)
+│   │       │   └── FannkuchBenchmarks.cs    (BDN benchmark class)
 │   │       ├── Energy/
 │   │       │   └── RaplWindows.cs          (LibreHardwareMonitorLib wrapper)
 │   │       └── Program.cs
@@ -56,7 +56,8 @@ csharp-energy-benchmark/
 │       └── FannkuchBenchmark/
 │           ├── FannkuchBenchmark.csproj   (.NET 9, Linux TFM)
 │           ├── Benchmarks/
-│           │   └── FannkuchSingleThread.cs  (shared logic — consider symlink or submodule)
+│           │   ├── FannkuchCore.cs          (Energy-Languages reference algorithm)
+│           │   └── FannkuchBenchmarks.cs    (BDN benchmark class)
 │           ├── Energy/
 │           │   └── RaplLinux.cs             (powercap sysfs reader)
 │           └── Program.cs
@@ -101,14 +102,18 @@ csharp-energy-benchmark/
 
 ## Benchmark Variants
 
-> **Note:** `FannkuchMultiThread` was descoped at supervisor request. Only the single-threaded
-> variant is measured. `[Params(11, 12)]` — N=10 was dropped due to thermal instability
-> caused by the short run duration.
+> **Algorithm:** Energy-Languages reference implementation
+> ([greensoftwarelab/Energy-Languages](https://github.com/greensoftwarelab/Energy-Languages/tree/master/CSharp/fannkuch-redux)).
+> Contributed by Isaac Gouy, transliterated from Oleg Mazurov's Java program;
+> concurrency fix and minor improvements by Peperud.
+> The algorithm is inherently multi-threaded (`Environment.ProcessorCount + 1` Task threads,
+> `NCHUNKS = 150` work-stealing chunks). `[Params(11, 12)]` — N=10 was dropped due to
+> thermal instability from short run duration.
 
 | Variant | Description | Expected insight |
 |---|---|---|
-| `FannkuchST_N11` | Single-thread, n=11 | Baseline JIT + energy signal |
-| `FannkuchST_N12` | Single-thread, n=12 | Longer run, better statistical coverage |
+| `FannkuchBenchmarks_N11` | n=11 | Baseline JIT + energy signal |
+| `FannkuchBenchmarks_N12` | n=12 | Longer run, better statistical coverage |
 
 ---
 

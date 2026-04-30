@@ -21,16 +21,18 @@ The work will produce:
 
 ## Algorithm: FannkuchRedux
 
-- Source: [Computer Language Benchmarks Game](https://benchmarksgame-team.pages.debian.net/benchmarksgame/)
+- Source: [greensoftwarelab/Energy-Languages](https://github.com/greensoftwarelab/Energy-Languages/tree/master/CSharp/fannkuch-redux)
+  — contributed by Isaac Gouy, transliterated from Oleg Mazurov's Java program; concurrency fix and minor improvements by Peperud
 - Classification: CPU-bound, no I/O, minimal heap allocation
 - Why this benchmark:
   - Deterministic and reproducible
   - Exercises integer arithmetic and array access patterns
   - Well-known in cross-language performance literature
   - GC pressure is negligible, isolating JIT and scheduler behaviour
-- Variants to benchmark:
-  - Single-threaded, N=11 and N=12 (`[Params(11, 12)]`)
-  - Multi-thread variant descoped at supervisor request; N=10 dropped due to thermal instability from short run duration
+- Variant benchmarked: N=11 and N=12 (`[Params(11, 12)]`)
+  - N=10 dropped due to thermal instability from short run duration
+  - Multi-thread-only algorithm (`Environment.ProcessorCount + 1` Task threads); no single-thread variant
+- Benchmark class: `FannkuchBenchmarks`, method `Run()`
 
 ---
 

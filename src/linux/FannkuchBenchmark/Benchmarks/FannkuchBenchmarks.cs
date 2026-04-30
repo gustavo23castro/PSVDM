@@ -11,7 +11,7 @@ namespace FannkuchBenchmark;
 [CsvMeasurementsExporter]
 [JsonExporter]
 [SupportedOSPlatform("linux")]
-public class FannkuchSingleThread
+public class FannkuchBenchmarks
 {
     [Params(11, 12)]
     public int N { get; set; }
@@ -54,7 +54,7 @@ public class FannkuchSingleThread
         var pp0Before  = _rapl!.ReadCoresEnergyMicrojoules();
 
         var sw = Stopwatch.StartNew();
-        var result = FannkuchCore.ComputeSingle(N);
+        var result = FannkuchCore.Compute(N);
         sw.Stop();
 
         var pkgAfter  = _rapl!.ReadPackageEnergyMicrojoules();
@@ -69,7 +69,7 @@ public class FannkuchSingleThread
             : (_maxEnergyRange - pp0Before) + pp0After;
 
         _energyCsv!.WriteLine(
-            $"{DateTime.UtcNow:o},linux,FannkuchST,{N},single,{_iteration}," +
+            $"{DateTime.UtcNow:o},linux,Fannkuch,{N},multi,{_iteration}," +
             $"{pkgDelta},{pp0Delta},{sw.Elapsed.TotalMilliseconds:F3}," +
             $"{tempBefore:F1},{tempAfter:F1}");
 
