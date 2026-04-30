@@ -56,8 +56,7 @@ csharp-energy-benchmark/
 │       └── FannkuchBenchmark/
 │           ├── FannkuchBenchmark.csproj   (.NET 9, Linux TFM)
 │           ├── Benchmarks/
-│           │   ├── FannkuchSingleThread.cs  (shared logic — consider symlink or submodule)
-│           │   └── FannkuchMultiThread.cs
+│           │   └── FannkuchSingleThread.cs  (shared logic — consider symlink or submodule)
 │           ├── Energy/
 │           │   └── RaplLinux.cs             (powercap sysfs reader)
 │           └── Program.cs
@@ -102,12 +101,14 @@ csharp-energy-benchmark/
 
 ## Benchmark Variants
 
+> **Note:** `FannkuchMultiThread` was descoped at supervisor request. Only the single-threaded
+> variant is measured. `[Params(11, 12)]` — N=10 was dropped due to thermal instability
+> caused by the short run duration.
+
 | Variant | Description | Expected insight |
 |---|---|---|
-| `FannkuchST_N10` | Single-thread, n=10 | Baseline JIT performance |
-| `FannkuchST_N11` | Single-thread, n=11 | Longer run, better energy signal |
-| `FannkuchMT_N11` | `Parallel.For`, n=11 | OS scheduler differences |
-| `FannkuchMT_N12` | `Parallel.For`, n=12 | Full CPU saturation |
+| `FannkuchST_N11` | Single-thread, n=11 | Baseline JIT + energy signal |
+| `FannkuchST_N12` | Single-thread, n=12 | Longer run, better statistical coverage |
 
 ---
 

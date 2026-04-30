@@ -35,7 +35,17 @@ The i7-8850H (Coffee Lake) exposes full Intel RAPL domains:
 | `PP1` (uncore) | MSR_PP1_ENERGY_STATUS | Integrated GPU / uncore |
 | `DRAM` | MSR_DRAM_ENERGY_STATUS | Memory subsystem |
 
-**Linux access**: `/sys/class/powercap/intel-rapl/intel-rapl:0/`
+**Linux access** — verified paths (use `/sys/devices/virtual/powercap/` exclusively; `/sys/class/powercap/` symlinks do NOT work for subdomain access on this machine):
+
+| Domain | Path | Status |
+|---|---|---|
+| package-0 | `/sys/devices/virtual/powercap/intel-rapl/intel-rapl:0/energy_uj` | ✅ readable without sudo |
+| core | `/sys/devices/virtual/powercap/intel-rapl/intel-rapl:0/intel-rapl:0:0/energy_uj` | ✅ readable without sudo |
+| uncore | `/sys/devices/virtual/powercap/intel-rapl/intel-rapl:0/intel-rapl:0:1/energy_uj` | ✅ readable without sudo |
+| dram | `/sys/devices/virtual/powercap/intel-rapl/intel-rapl:0/intel-rapl:0:2/energy_uj` | ✅ readable without sudo |
+
+Permissions are managed by `/etc/udev/rules.d/99-rapl.rules` (`ACTION=="add"`, `chmod o+r` on each `energy_uj` file).
+
 **Windows access**: `LibreHardwareMonitorLib` NuGet package (requires Administrator)
 
 > ⚠️ Intel RAPL filtering (IPU 2021.2+) adds random noise to readings as a side-channel mitigation.

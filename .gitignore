@@ -8,6 +8,8 @@ obj/
 
 # BenchmarkDotNet temp (do NOT ignore results/)
 BenchmarkDotNet.Artifacts/*/bin/
+src/**/bin/
+src/**/obj/
 
 # Visual Studio / Rider
 *.swp

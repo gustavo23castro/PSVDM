@@ -16,7 +16,6 @@ The work will produce:
 1. Is there a statistically significant difference in **execution time** between Windows 11 and Ubuntu 24.04 for a CPU-bound C# workload?
 2. Is there a measurable difference in **energy consumption** (Joules) between the two platforms for the same workload?
 3. Can observed differences be attributed to OS-level factors (scheduler, JIT behaviour, power management)?
-4. How do results scale from **single-threaded** to **multi-threaded** execution?
 
 ---
 
@@ -30,8 +29,8 @@ The work will produce:
   - Well-known in cross-language performance literature
   - GC pressure is negligible, isolating JIT and scheduler behaviour
 - Variants to benchmark:
-  - Single-threaded baseline
-  - Multi-threaded (`Parallel.For`) — doubles the dataset and adds scheduling dimension
+  - Single-threaded, N=11 and N=12 (`[Params(11, 12)]`)
+  - Multi-thread variant descoped at supervisor request; N=10 dropped due to thermal instability from short run duration
 
 ---
 
