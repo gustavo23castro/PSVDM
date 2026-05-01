@@ -1,0 +1,505 @@
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[portuguese]{babel}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{hyperref}
+\usepackage{amsmath}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{xcolor}
+\usepackage[numbers]{natbib}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue,
+  citecolor=blue,
+  urlcolor=blue
+}
+
+\title{Avaliação de Performance e Consumo Energético de C\# em Windows e Linux:\\
+Um Estudo Comparativo com o Algoritmo FannkuchRedux}
+\author{Gustavo Castro\\
+\small Universidade do Minho, Departamento de Informática\\
+\small Mestrado em Engenharia Informática}
+\date{Maio de 2026}
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+\newpage
+
+%% ─────────────────────────────────────────────────────────────────────────────
+\section{Resumo}
+%% ─────────────────────────────────────────────────────────────────────────────
+
+Este trabalho compara a performance e o consumo energético de C\# em Windows 11 e
+Ubuntu 24.04 utilizando o algoritmo FannkuchRedux como \textit{benchmark} CPU-bound.
+A medição de energia foi realizada diretamente via Intel RAPL
+(\textit{Running Average Power Limit}), a medição de tempo via BenchmarkDotNet,
+e ambos os sistemas operativos correram no mesmo hardware (dual-boot), com turbo
+desativado para garantir comparabilidade.
+Os resultados mostram que Windows é 38.1\% mais rápido para N=11 e 35.2\% mais
+rápido para N=12, mas que Linux consome 69\% menos energia para N=11
+(15.99\,J vs.\ 27.06\,J) e 32\% menos para N=12 (216.14\,J vs.\ 285.03\,J).
+Todas as diferenças são estatisticamente significativas (Mann-Whitney U,
+$p < 0.001$), confirmadas por testes de permutação independentes.
+Conclui-se que existe um trade-off claro entre velocidade e eficiência energética
+nos dois sistemas operativos, com implicações práticas para decisões de
+\textit{deployment} em ambientes onde o custo energético é relevante.
+
+%% ─────────────────────────────────────────────────────────────────────────────
+\section{Introdução}
+%% ─────────────────────────────────────────────────────────────────────────────
+
+A eficiência energética do software é uma preocupação crescente, especialmente em
+contextos de computação de alto desempenho e \textit{edge computing}.
+A linguagem C\# e o ecossistema .NET são amplamente usados em ambientes de
+produção que correm tanto em Windows como em Linux.
+Compreender como o sistema operativo influencia a performance e o consumo
+energético de um mesmo programa é relevante para decisões de \textit{deployment}.
+
+A maioria dos estudos de performance em .NET foca-se em métricas de tempo de
+execução, ignorando o consumo energético.
+Estudos como o de Pereira et al.\ \cite{Pereira2017}
+(\textit{greensoftwarelab/Energy-Languages} \cite{EnergyLanguages}) demonstram
+que a linguagem e o ambiente de execução têm impacto significativo na energia
+consumida.
+Este trabalho estende essa linha de investigação para comparar dois sistemas
+operativos com o mesmo hardware e runtime.
+
+Este trabalho tem como objetivos:
+(1) medir e comparar o tempo de execução de C\# em Windows 11 e Ubuntu 24.04;
+(2) medir e comparar o consumo energético via Intel RAPL em ambos os sistemas
+operativos;
+(3) avaliar a significância estatística das diferenças observadas;
+(4) identificar possíveis causas para as diferenças encontradas.
+
+O restante documento está organizado da seguinte forma: a Secção~\ref{sec:metodologia}
+descreve a metodologia e o ambiente experimental; a Secção~\ref{sec:resultados}
+apresenta os resultados obtidos; a Secção~\ref{sec:discussao} discute as
+implicações dos resultados; a Secção~\ref{sec:ameacas} identifica ameaças à
+validade; a Secção~\ref{sec:conclusao} conclui o trabalho.
+
+%% ─────────────────────────────────────────────────────────────────────────────
+\section{Metodologia}
+\label{sec:metodologia}
+%% ─────────────────────────────────────────────────────────────────────────────
+
+\subsection{Algoritmo de Benchmark --- FannkuchRedux}
+
+O FannkuchRedux é um algoritmo CPU-bound puro, sem I/O, baseado em permutações
+de arrays, proveniente do \textit{Computer Language Benchmarks Game} (CLBG)
+\cite{CLBG}.
+A implementação em C\# utilizada é a referência de
+\textit{greensoftwarelab/Energy-Languages} \cite{EnergyLanguages}, contribuída
+por Isaac Gouy, transliterada do programa Java de Oleg Mazurov, com melhorias de
+concorrência por Peperud \cite{Pereira2017}.
+
+Foram testadas duas variantes: N=11 e N=12 (tamanho do problema, que determina
+a complexidade fatorial).
+O algoritmo utiliza \textit{threading} via \texttt{Task.Run} com
+\texttt{Environment.ProcessorCount + 1} \textit{workers}.
+A correção foi verificada: \texttt{Compute(7)} devolve \textit{checksum} 228 e
+\textit{maxFlips} 16, correspondendo ao valor de referência do CLBG.
+A alocação de \textit{heap} é de aproximadamente 52\,KB por iteração (verificado
+via \texttt{MemoryDiagnoser} do BenchmarkDotNet), pelo que o GC é irrelevante
+para os resultados.
+
+\subsection{Hardware e Software}
+
+A Tabela~\ref{tab:hardware} resume as especificações do ambiente de teste.
+
+\begin{table}[H]
+  \centering
+  \caption{Especificações de hardware e software do ambiente de teste.}
+  \label{tab:hardware}
+  \begin{tabular}{ll}
+    \toprule
+    \textbf{Campo} & \textbf{Valor} \\
+    \midrule
+    Máquina        & HP EliteBook 1050 G1 \\
+    CPU            & Intel Core i7-8850H (Coffee Lake, 6C/12T, 2.6\,GHz base) \\
+    RAM            & 16\,GiB \\
+    Armazenamento  & Samsung NVMe 512\,GB \\
+    SO Linux       & Ubuntu 24.04.3 LTS, kernel 6.17.0-22-generic \\
+    SO Windows     & Windows 11 Pro (build 26200.8246) \\
+    .NET SDK       & 9.0.312 (Linux) / 9.0.313 (Windows) \\
+    Runtime .NET   & 9.0.14 (Linux) / 9.0.15 (Windows) \\
+    BenchmarkDotNet & 0.15.8 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{Medição de Performance --- BenchmarkDotNet}
+
+A ferramenta BenchmarkDotNet 0.15.8 \cite{BenchmarkDotNet} foi usada para medir
+o tempo de execução.
+A configuração incluiu \texttt{SimpleJob(RuntimeMoniker.Net90)},
+\texttt{MemoryDiagnoser} e \texttt{CsvMeasurementsExporter}.
+O aquecimento (\textit{warm-up}) é realizado automaticamente antes das iterações
+medidas, com deteção e remoção automática de \textit{outliers} estatísticos pelo
+BenchmarkDotNet.
+A compilação foi feita em modo \textit{Release}, x64, com
+\texttt{Optimize=true}.
+Em Windows foi usado \texttt{InProcessEmitToolchain} (necessário para a
+integração com a LibreHardwareMonitorLib).
+
+\subsection{Medição de Energia --- Intel RAPL}
+
+A energia foi medida via Intel RAPL \cite{IntelRAPL} no domínio \textit{Package}
+(\texttt{MSR\_PKG\_ENERGY\_STATUS}, 0x611), que inclui todos os núcleos, e no
+domínio secundário PP0/\textit{Cores} (\texttt{MSR\_PP0\_ENERGY\_STATUS},
+0x639).
+
+\textbf{Linux:} leitura via
+\texttt{/sys/devices/virtual/powercap/intel-rapl/intel-rapl:0/energy\_uj}
+(sysfs, kernel powercap).
+
+\textbf{Windows:} leitura via driver WinRing0 (LibreHardwareMonitorLib 0.9.3)
+\cite{LibreHardwareMonitor}, com acesso direto ao MSR por reflexão sobre
+\texttt{LibreHardwareMonitor.Hardware.Ring0.ReadMsr}.
+
+A unidade de energia é lida do \texttt{MSR\_RAPL\_POWER\_UNIT} (0x606),
+bits [12:8] --- para Coffee Lake: $2^{-14}$\,J/unit $\approx$ 61\,µJ/unit.
+O método de medição consiste na leitura do contador antes e depois de cada
+iteração; o delta é a energia consumida.
+O \textit{wraparound} do contador de 32 bits foi tratado (período de
+\textit{wrap} muito superior à duração das \textit{runs}).
+
+\subsection{Configuração do Ambiente de Medição}
+
+Para garantir comparabilidade entre os dois sistemas operativos, as seguintes
+configurações foram aplicadas:
+
+\textbf{Ambos os SO:}
+\begin{itemize}
+  \item Turbo Boost desativado
+    (Linux: \texttt{/sys/devices/system/cpu/intel\_pstate/no\_turbo=1};
+    Windows: \texttt{PROCTHROTTLEMAX=99\%})
+  \item Máquina ligada à corrente (AC power)
+  \item Sem outras aplicações intensivas em CPU durante as medições
+\end{itemize}
+
+\textbf{Linux:}
+\begin{itemize}
+  \item CPU governor: \texttt{performance} (via cpupower)
+  \item Script de lançamento: \texttt{scripts/run-linux.sh}
+\end{itemize}
+
+\textbf{Windows:}
+\begin{itemize}
+  \item Plano de energia: Desempenho Máximo (GUID \texttt{202e5b95\ldots})
+  \item Processo executado como Administrador (necessário para acesso MSR via
+    WinRing0)
+\end{itemize}
+
+\subsection{Protocolo de Recolha de Dados}
+
+O número de iterações foi determinado automaticamente pelo BenchmarkDotNet
+(mínimo de estabilidade estatística).
+As amostras válidas, após remoção de \textit{outliers} (critério IQR 1.5×),
+foram:
+\begin{itemize}
+  \item Linux N=11: 23 amostras; Linux N=12: 20 amostras
+  \item Windows N=11: 25 amostras; Windows N=12: 22 amostras
+\end{itemize}
+Os dados foram exportados para CSV com \textit{timestamp}, energia (µJ),
+duração (ms) e temperatura.
+
+\subsection{Análise Estatística}
+
+Foram utilizados os seguintes testes e medidas:
+\begin{itemize}
+  \item \textbf{Mann-Whitney U} (amostras independentes, não-paramétrico)
+  \item \textbf{A/B test por permutação} (10\,000 permutações)
+  \item \textbf{Correlação de Spearman} $\rho$ (relação não-linear entre tempo
+    e energia)
+  \item \textbf{Intervalos de confiança} a 95\%, calculados via distribuição
+    $t$ de Student
+\end{itemize}
+O nível de significância foi $\alpha = 0.05$.
+As ferramentas utilizadas foram Python 3, pandas, scipy, seaborn e matplotlib.
+
+%% ─────────────────────────────────────────────────────────────────────────────
+\section{Resultados}
+\label{sec:resultados}
+%% ─────────────────────────────────────────────────────────────────────────────
+
+\subsection{Estatísticas Descritivas}
+
+A Tabela~\ref{tab:estatisticas} apresenta as estatísticas descritivas completas
+para os quatro grupos experimentais.
+
+\begin{table}[H]
+  \centering
+  \caption{Estatísticas descritivas por SO e valor de N.}
+  \label{tab:estatisticas}
+  \begin{tabular}{llrrrrrr}
+    \toprule
+    \textbf{SO} & \textbf{N} & \textbf{n} & \textbf{Média (ms)} &
+    \textbf{Mediana (ms)} & \textbf{DP (ms)} & \textbf{CV (\%)} &
+    \textbf{Energia média (J)} \\
+    \midrule
+    Linux   & 11 & 23 & 623.5  & 623.7  & 3.95  & 0.63 & 15.99  \\
+    Linux   & 12 & 20 & 8577.8 & 8578.3 & 28.10 & 0.33 & 216.14 \\
+    Windows & 11 & 25 & 451.5  & 451.7  & 4.28  & 0.95 & 27.06  \\
+    Windows & 12 & 22 & 6343.6 & 6335.2 & 34.64 & 0.55 & 285.03 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{Visualização dos Dados}
+
+A Figura~\ref{fig:boxplot_time} mostra a distribuição do tempo de execução por
+SO e N.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{../analysis/figures/01_boxplot_time.png}
+  \caption{Distribuição do tempo de execução para N=11 e N=12 em Linux e
+    Windows. Os pontos representam iterações individuais.}
+  \label{fig:boxplot_time}
+\end{figure}
+
+A Figura~\ref{fig:boxplot_energy} apresenta a distribuição do consumo
+energético por SO e N.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{../analysis/figures/02_boxplot_energy.png}
+  \caption{Distribuição do consumo energético (domínio Package) para N=11 e
+    N=12.}
+  \label{fig:boxplot_energy}
+\end{figure}
+
+A Figura~\ref{fig:summary_bar} apresenta as médias e intervalos de confiança a
+95\% para tempo de execução e energia.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{../analysis/figures/06_summary_bar.png}
+  \caption{Média e IC 95\% para tempo de execução (esq.) e energia (dir.) por
+    SO e N.}
+  \label{fig:summary_bar}
+\end{figure}
+
+A Figura~\ref{fig:correlation} ilustra a correlação de Spearman entre tempo de
+execução e energia consumida.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{../analysis/figures/05_correlation.png}
+  \caption{Correlação entre tempo de execução e energia consumida por SO
+    (Spearman $\rho$).}
+  \label{fig:correlation}
+\end{figure}
+
+\subsection{Comparação de Performance (Tempo)}
+
+Para N=11, Windows executa em 451.5\,ms (IC 95\%: [449.7, 453.3]\,ms) vs.\
+Linux 623.5\,ms (IC 95\%: [621.8, 625.2]\,ms).
+\textbf{Windows é 38.1\% mais rápido.}
+Os intervalos de confiança não se sobrepõem.
+
+Para N=12, Windows executa em 6343.6\,ms (IC 95\%: [6328.2, 6359.0]\,ms) vs.\
+Linux 8577.8\,ms (IC 95\%: [8564.7, 8591.0]\,ms).
+\textbf{Windows é 35.2\% mais rápido.}
+
+\subsection{Comparação de Consumo Energético}
+
+Para N=11, Linux consome 15.99\,J (IC 95\%: [15.90, 16.08]\,J) vs.\ Windows
+27.06\,J (IC 95\%: [26.96, 27.17]\,J).
+\textbf{Linux consome 40.9\% menos energia.}
+
+Para N=12, Linux consome 216.14\,J (IC 95\%: [215.70, 216.58]\,J) vs.\ Windows
+285.03\,J (IC 95\%: [284.28, 285.79]\,J).
+\textbf{Linux consome 24.2\% menos energia.}
+
+\subsection{Significância Estatística}
+
+A Tabela~\ref{tab:testes} apresenta os resultados dos testes de hipótese.
+Todas as diferenças são estatisticamente significativas com $p < 0.001$
+($\alpha = 0.05$).
+
+\begin{table}[H]
+  \centering
+  \caption{Resultados dos testes de hipótese para tempo e energia.}
+  \label{tab:testes}
+  \begin{tabular}{llllrll}
+    \toprule
+    \textbf{N} & \textbf{Métrica} & \textbf{Teste} & \textbf{Estatística} &
+    \textbf{p-value} & \textbf{Significativo} \\
+    \midrule
+    11 & Tempo   & Mann-Whitney U  & 575.0          & $<$0.001 & Sim (***) \\
+    11 & Energia & Mann-Whitney U  & 0.0            & $<$0.001 & Sim (***) \\
+    11 & Tempo   & Permutação A/B  & 172.0\,ms      & $<$0.001 & Sim (***) \\
+    11 & Energia & Permutação A/B  & $-$11.07\,J    & $<$0.001 & Sim (***) \\
+    12 & Tempo   & Mann-Whitney U  & 440.0          & $<$0.001 & Sim (***) \\
+    12 & Energia & Mann-Whitney U  & 0.0            & $<$0.001 & Sim (***) \\
+    12 & Tempo   & Permutação A/B  & 2234.2\,ms     & $<$0.001 & Sim (***) \\
+    12 & Energia & Permutação A/B  & $-$68.89\,J    & $<$0.001 & Sim (***) \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{Correlação Tempo--Energia}
+
+A correlação de Spearman entre tempo de execução e energia consumida é forte e
+estatisticamente significativa em ambos os grupos:
+\begin{itemize}
+  \item Spearman $\rho$ (dataset completo) $= 0.607$, $p < 0.001$
+  \item Spearman $\rho$ (Linux) $= 0.895$, $p < 0.001$
+  \item Spearman $\rho$ (Windows) $= 0.983$, $p < 0.001$
+\end{itemize}
+
+Este resultado é esperado para um \textit{workload} CPU-bound puro.
+A correlação mais forte no Windows sugere comportamento mais previsível na
+relação energia/tempo nesse SO.
+
+\subsection{Variância e Estabilidade}
+
+O coeficiente de variação (CV) do Linux é consistentemente abaixo de 1\%
+(0.33\%--0.63\%), indicando ambiente de medição muito estável.
+O CV do Windows N=11 (0.95\%) é superior ao Linux, refletindo maior
+variabilidade do \textit{scheduler} do Windows para \textit{workloads} de curta
+duração.
+O CV do Windows N=12 (0.55\%) normaliza para valores próximos do Linux,
+sugerindo que \textit{workloads} mais longas estabilizam o comportamento.
+
+A Figura~\ref{fig:histogram_time} mostra a distribuição do tempo de execução
+por SO e N.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{../analysis/figures/03_histogram_time.png}
+  \caption{Distribuição do tempo de execução por SO e N (histograma + KDE).}
+  \label{fig:histogram_time}
+\end{figure}
+
+%% ─────────────────────────────────────────────────────────────────────────────
+\section{Discussão}
+\label{sec:discussao}
+%% ─────────────────────────────────────────────────────────────────────────────
+
+\subsection{Windows é mais rápido --- porquê?}
+
+O algoritmo usa \texttt{Task.Run} com \texttt{Environment.ProcessorCount+1}
+\textit{workers}.
+O ThreadPool do Windows é historicamente mais agressivo a escalonar
+\textit{threads} em múltiplos núcleos para \textit{workloads} curtas.
+O .NET no Windows pode também beneficiar de otimizações específicas da
+plataforma no JIT (RyuJIT x64).
+Embora o turbo tenha sido desativado, diferenças residuais de frequência entre
+os governadores de cada SO não podem ser completamente excluídas.
+O \textit{scheduler} CFS do Linux (\textit{Completely Fair Scheduler}) prioriza
+equidade sobre \textit{throughput} máximo, o que pode desfavorecer
+\textit{workloads} multi-threaded intensivas.
+
+\subsection{Linux consome menos energia --- porquê?}
+
+Windows executa mais rápido, mas consome proporcionalmente muito mais energia.
+Para N=11, Windows é 38\% mais rápido mas consome 69\% mais energia.
+Este resultado é contra-intuitivo se se assumir que ``mais rápido = menos tempo
+a trabalhar = menos energia''.
+A explicação mais provável é que Windows opera os núcleos a
+voltagem/frequência mais elevada mesmo com turbo desativado (estados de
+potência C0 mais agressivos, menor uso de C-states entre tarefas).
+O governor \texttt{performance} do Linux mantém frequência base constante
+($\approx$2.6\,GHz) com transições suaves de C-state.
+O plano ``Desempenho Máximo'' do Windows pode operar em estados de potência
+mais elevados de forma mais contínua.
+Para \textit{workloads} onde o tempo de resposta não é crítico, Linux oferece
+melhor eficiência energética.
+
+\subsection{Trade-off velocidade vs.\ energia}
+
+Existe um trade-off claro: Windows oferece aproximadamente 35--38\% mais
+velocidade em troca de aproximadamente 25--69\% mais consumo energético.
+A magnitude do trade-off varia com N: para N=12 (\textit{workload} mais longa),
+a diferença de energia reduz-se (24\% vs.\ 69\% para N=11), sugerindo que o
+efeito é mais pronunciado em \textit{workloads} curtas onde os
+\textit{overheads} de \textit{scheduling} dominam.
+Para aplicações onde a eficiência energética é prioritária (e.g., servidores em
+\textit{data centers} com custo de energia elevado, dispositivos embebidos),
+Linux apresenta vantagem clara.
+
+%% ─────────────────────────────────────────────────────────────────────────────
+\section{Ameaças à Validade}
+\label{sec:ameacas}
+%% ─────────────────────────────────────────────────────────────────────────────
+
+\subsection{Validade Interna}
+
+\textbf{Sessões separadas:} as medições Linux e Windows foram realizadas em
+momentos distintos.
+Fatores como temperatura ambiente e estado do hardware podem introduzir
+\textit{bias} sistemático.
+
+\textbf{Temperatura Windows não disponível:} impossibilidade de correlacionar
+temperatura com desempenho no Windows.
+
+\textbf{Filtro RAPL:} a Intel adicionou ruído aleatório às leituras RAPL
+(IPU 2021.2) como mitigação de ataques \textit{side-channel}.
+Afeta ambos os SO de forma equivalente; mitigado pelo número elevado de
+iterações.
+
+\subsection{Validade Externa}
+
+\textbf{Hardware único:} os resultados foram obtidos num único \textit{laptop}
+(HP EliteBook 1050 G1, i7-8850H) e podem não generalizar para outros
+processadores (AMD, ARM) ou fatores de forma (desktop, servidor).
+
+\textbf{Algoritmo único:} FannkuchRedux é um \textit{benchmark} CPU-bound puro.
+Resultados podem diferir para \textit{workloads} com I/O intensivo, uso
+intensivo de memória ou execução \textit{single-threaded}.
+
+\textbf{Versão .NET:} testado com .NET 9.
+Resultados podem variar com versões anteriores ou futuras.
+
+\subsection{Validade de Construção}
+
+\textbf{Dimensão da amostra:} 20--25 amostras por grupo estão ligeiramente
+abaixo do $n=30$ recomendado pelo Teorema do Limite Central.
+Os testes não-paramétricos utilizados (Mann-Whitney, permutação) são válidos
+para $n \geq 20$.
+
+\textbf{Variância Windows N=11:} CV $\approx$ 0.95\% indica comportamento
+menos determinístico.
+Os \textit{outliers} foram removidos pelo critério IQR antes dos testes.
+
+%% ─────────────────────────────────────────────────────────────────────────────
+\section{Conclusão}
+\label{sec:conclusao}
+%% ─────────────────────────────────────────────────────────────────────────────
+
+Este trabalho comparou a performance e o consumo energético de C\# (.NET 9) em
+Windows 11 e Ubuntu 24.04 usando o algoritmo FannkuchRedux como
+\textit{benchmark} CPU-bound.
+Os resultados mostram que Windows 11 é consistentemente mais rápido (35--38\%)
+mas consome significativamente mais energia (25--69\%) que Ubuntu 24.04, nas
+mesmas condições de hardware.
+Todas as diferenças são estatisticamente significativas (Mann-Whitney U,
+$p < 0.001$) e confirmadas por testes de permutação independentes.
+
+Os resultados evidenciam um trade-off claro entre velocidade e eficiência
+energética dependente do SO.
+Para aplicações onde o custo energético é prioritário --- como servidores em
+larga escala ou sistemas embebidos --- Linux apresenta vantagem significativa.
+Como trabalho futuro sugere-se:
+(1) replicar o estudo noutros tipos de hardware (desktop, servidor ARM);
+(2) incluir \textit{workloads} \textit{single-threaded} e com I/O intensivo;
+(3) comparar versões de .NET (8 vs.\ 9 vs.\ 10);
+(4) investigar o impacto de diferentes configurações do \textit{scheduler} Linux.
+
+%% ─────────────────────────────────────────────────────────────────────────────
+\bibliographystyle{plainnat}
+\bibliography{relatorio}
+%% ─────────────────────────────────────────────────────────────────────────────
+
+\end{document}
