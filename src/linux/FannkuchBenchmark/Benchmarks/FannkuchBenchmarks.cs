@@ -50,23 +50,21 @@ public class FannkuchBenchmarks
     {
         _iteration++;
         var tempBefore = ReadCpuTemp();
-        var pkgBefore  = _rapl!.ReadPackageEnergyMicrojoules();
-        var pp0Before  = _rapl!.ReadCoresEnergyMicrojoules();
+        var before = _rapl!.TakeSnapshot();
 
         var sw = Stopwatch.StartNew();
         var result = FannkuchCore.Compute(N);
         sw.Stop();
 
-        var pkgAfter  = _rapl!.ReadPackageEnergyMicrojoules();
-        var pp0After  = _rapl!.ReadCoresEnergyMicrojoules();
+        var after = _rapl!.TakeSnapshot();
         var tempAfter = ReadCpuTemp();
 
-        var pkgDelta = pkgAfter >= pkgBefore
-            ? pkgAfter - pkgBefore
-            : (_maxEnergyRange - pkgBefore) + pkgAfter;
-        var pp0Delta = pp0After >= pp0Before
-            ? pp0After - pp0Before
-            : (_maxEnergyRange - pp0Before) + pp0After;
+        var pkgDelta = after.PackageMicrojoules >= before.PackageMicrojoules
+            ? after.PackageMicrojoules - before.PackageMicrojoules
+            : (_maxEnergyRange - before.PackageMicrojoules) + after.PackageMicrojoules;
+        var pp0Delta = after.CoresMicrojoules >= before.CoresMicrojoules
+            ? after.CoresMicrojoules - before.CoresMicrojoules
+            : (_maxEnergyRange - before.CoresMicrojoules) + after.CoresMicrojoules;
 
         _energyCsv!.WriteLine(
             $"{DateTime.UtcNow:o},linux,Fannkuch,{N},multi,{_iteration}," +
