@@ -2,16 +2,6 @@ using System.Runtime.Versioning;
 
 namespace FannkuchBenchmark.Energy;
 
-// Snapshot of all RAPL domains from a single sysfs read pass.
-public readonly struct RaplSnapshot
-{
-    public DateTime Timestamp          { get; init; }
-    public long     PackageMicrojoules { get; init; }
-    public long     CoresMicrojoules   { get; init; }
-    public long     UncoreMicrojoules  { get; init; }
-    public long     DramMicrojoules    { get; init; }
-}
-
 // Reads Intel RAPL energy counters via the powercap sysfs interface.
 // Uses /sys/devices/virtual/powercap/ paths — /sys/class/powercap/ symlinks
 // do NOT work for subdomain access on this machine (HP EliteBook 1050 G1).
@@ -40,14 +30,12 @@ public sealed class RaplLinux : IRaplReader, IDisposable
         _maxRange = ReadRaw(PathMaxRange);
     }
 
-    // Returns a consistent snapshot of all four domains.
+    // sysfs reads are atomic at the kernel level, so sequential reads form a
+    // consistent enough pair for benchmark deltas — no Refresh() is needed.
     public RaplSnapshot TakeSnapshot() => new()
     {
-        Timestamp          = DateTime.Now,
         PackageMicrojoules = ReadPackageEnergyMicrojoules(),
         CoresMicrojoules   = ReadCoresEnergyMicrojoules(),
-        UncoreMicrojoules  = ReadRaw(PathUncore),
-        DramMicrojoules    = ReadRaw(PathDram),
     };
 
     public long ReadPackageEnergyMicrojoules() => ReadRaw(PathPackage);

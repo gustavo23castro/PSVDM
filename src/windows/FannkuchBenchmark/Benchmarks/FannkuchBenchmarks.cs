@@ -1,16 +1,22 @@
 using System.Diagnostics;
+using System.Globalization;
 using System.Runtime.Versioning;
 using BenchmarkDotNet.Attributes;
-using BenchmarkDotNet.Jobs;
 using FannkuchBenchmark.Energy;
 
 namespace FannkuchBenchmark;
 
+// Job configuration is centralised in Program.cs (in-process toolchain). BDN's
+// default child-process toolchain breaks LibreHardwareMonitorLib's WinRing0
+// driver install on this layout (deeply-nested BDN-generated build dir),
+// so we keep everything inside the elevated host process.
+//
+// No [SimpleJob(RuntimeMoniker.Net90)] either: that moniker generates a child
+// project with TFM "net9.0" which cannot reference this "net9.0-windows" project.
 [MemoryDiagnoser]
-[SimpleJob(RuntimeMoniker.Net90)]
 [CsvMeasurementsExporter]
 [JsonExporter]
-[SupportedOSPlatform("linux")]
+[SupportedOSPlatform("windows")]
 public class FannkuchBenchmarks
 {
     [Params(11, 12)]
@@ -19,18 +25,21 @@ public class FannkuchBenchmarks
     private IRaplReader? _rapl;
     private StreamWriter? _energyCsv;
     private int _iteration;
-    private long _maxEnergyRange = 0;
+
+    // LHM-derived counters accumulate in software and never wrap, so the
+    // wraparound branch in Run() is dead code on Windows. The field exists
+    // only to keep delta logic identical to the Linux benchmark.
+    private readonly long _maxEnergyRange = long.MaxValue;
 
     [GlobalSetup]
     public void Setup()
     {
-        _rapl = new RaplLinux();
+        _rapl = new RaplWindows();
         _iteration = 0;
-        _maxEnergyRange = ReadMaxEnergyRange();
 
         var energyDir = FindResultsDir("energy");
         Directory.CreateDirectory(energyDir);
-        var csvPath = Path.Combine(energyDir, "energy_single.csv");
+        var csvPath = Path.Combine(energyDir, "energy_windows.csv");
         var isNew = !File.Exists(csvPath);
         _energyCsv = new StreamWriter(csvPath, append: true);
         if (isNew)
@@ -66,20 +75,18 @@ public class FannkuchBenchmarks
             ? after.CoresMicrojoules - before.CoresMicrojoules
             : (_maxEnergyRange - before.CoresMicrojoules) + after.CoresMicrojoules;
 
+        // Force invariant culture: pt-PT uses ',' as the decimal separator, which
+        // would clash with the CSV field delimiter and corrupt the output.
+        var inv = CultureInfo.InvariantCulture;
         _energyCsv!.WriteLine(
-            $"{DateTime.UtcNow:o},linux,Fannkuch,{N},multi,{_iteration}," +
-            $"{pkgDelta},{pp0Delta},{sw.Elapsed.TotalMilliseconds:F3}," +
-            $"{tempBefore:F1},{tempAfter:F1}");
+            $"{DateTime.UtcNow:o},windows,Fannkuch,{N},multi,{_iteration}," +
+            $"{pkgDelta},{pp0Delta},{sw.Elapsed.TotalMilliseconds.ToString("F3", inv)}," +
+            $"{tempBefore.ToString("F1", inv)},{tempAfter.ToString("F1", inv)}");
 
         return result;
     }
 
-    private static double ReadCpuTemp()
-    {
-        const string path = "/sys/class/thermal/thermal_zone14/temp";
-        try { return int.Parse(File.ReadAllText(path).Trim()) / 1000.0; }
-        catch { return -1; }
-    }
+    private static double ReadCpuTemp() => -1;
 
     private static string FindResultsDir(string subdir)
     {
@@ -87,14 +94,7 @@ public class FannkuchBenchmarks
         if (root is null)
             throw new InvalidOperationException(
                 "BENCHMARK_RESULTS_ROOT is not set. " +
-                "Use scripts/run-linux.sh to launch benchmarks.");
-        return Path.Combine(root, "linux", subdir);
-    }
-
-    private static long ReadMaxEnergyRange()
-    {
-        const string path = "/sys/devices/virtual/powercap/intel-rapl/intel-rapl:0/max_energy_range_uj";
-        try { return long.Parse(File.ReadAllText(path).Trim()); }
-        catch { return 262143328850; } // Coffee Lake fallback
+                "Use scripts/run-windows.ps1 to launch benchmarks.");
+        return Path.Combine(root, "windows", subdir);
     }
 }

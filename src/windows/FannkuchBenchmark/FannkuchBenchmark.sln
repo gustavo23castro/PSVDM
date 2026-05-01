@@ -1,0 +1,19 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Scope marker: BenchmarkDotNet locates the nearest .sln when resolving the
+# project file. Without this stub, BDN's repo-wide search finds both
+# src/linux/FannkuchBenchmark/FannkuchBenchmark.csproj and the Windows one
+# and aborts with "Benchmark project names needs to be unique."
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FannkuchBenchmark", "FannkuchBenchmark.csproj", "{B1A1B2A2-1111-2222-3333-444455556666}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B1A1B2A2-1111-2222-3333-444455556666}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B1A1B2A2-1111-2222-3333-444455556666}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B1A1B2A2-1111-2222-3333-444455556666}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B1A1B2A2-1111-2222-3333-444455556666}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
