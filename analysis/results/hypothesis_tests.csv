@@ -1,14 +1,35 @@
-n,metric,test,statistic,pvalue,significant,alternative,interpretation
-11,duration_ms,Mann-Whitney U,575.000000,0.000000,True,two-sided (Linux ≠ Windows),Linux é significativamente diferente de Windows em tempo
-11,duration_ms,Mann-Whitney U,575.000000,0.000000,True,"one-sided (Linux > Windows, Linux é mais lento)",Linux é significativamente mais lento que Windows
-11,pkg_energy_j,Mann-Whitney U,0.000000,0.000000,True,"one-sided (Linux < Windows, Linux consome menos)",Linux consome significativamente menos energia que Windows
-11,duration_ms,Permutation A/B (10000 perms),172.000115,0.000000,True,two-sided,Diferença observada (172.00 ms) estatisticamente significativa
-11,pkg_energy_j,Permutation A/B (10000 perms),-11.073033,0.000000,True,one-sided (Linux < Windows),Linux usa 11.073 J menos que Windows (significativo)
-12,duration_ms,Mann-Whitney U,440.000000,0.000000,True,two-sided (Linux ≠ Windows),Linux é significativamente diferente de Windows em tempo
-12,duration_ms,Mann-Whitney U,440.000000,0.000000,True,"one-sided (Linux > Windows, Linux é mais lento)",Linux é significativamente mais lento que Windows
-12,pkg_energy_j,Mann-Whitney U,0.000000,0.000000,True,"one-sided (Linux < Windows, Linux consome menos)",Linux consome significativamente menos energia que Windows
-12,duration_ms,Permutation A/B (10000 perms),2234.214500,0.000000,True,two-sided,Diferença observada (2234.21 ms) estatisticamente significativa
-12,pkg_energy_j,Permutation A/B (10000 perms),-68.894761,0.000000,True,one-sided (Linux < Windows),Linux usa 68.895 J menos que Windows (significativo)
-all,duration_ms vs pkg_energy_j,Spearman correlation (full dataset),0.606783,0.000000,True,two-sided,ρ = 0.607 — correlação significativa
-all,duration_ms vs pkg_energy_j,Spearman correlation (linux),0.894594,0.000000,True,two-sided,ρ = 0.895 — correlação significativa para linux
-all,duration_ms vs pkg_energy_j,Spearman correlation (windows),0.983002,0.000000,True,two-sided,ρ = 0.983 — correlação significativa para windows
+algorithm,n,metric,test,statistic,pvalue,significant,alternative,interpretation
+FannkuchRedux,11,duration_ms,Mann-Whitney U,575.000000,0.000000,True,two-sided (Linux ≠ Windows),Linux é significativamente diferente de Windows em tempo
+FannkuchRedux,11,duration_ms,Mann-Whitney U,575.000000,0.000000,True,"one-sided (Linux > Windows, Linux é mais lento)",Linux é significativamente mais lento que Windows
+FannkuchRedux,11,pkg_energy_j,Mann-Whitney U,0.000000,0.000000,True,"one-sided (Linux < Windows, Linux consome menos)",Linux consome significativamente menos energia que Windows
+FannkuchRedux,11,dram_energy_j,Mann-Whitney U,575.000000,0.000000,True,two-sided (Linux ≠ Windows),Diferença significativa em energia DRAM
+FannkuchRedux,11,duration_ms,Permutation A/B (10000 perms),194.701397,0.000000,True,two-sided,Diferença observada (194.70 ms) estatisticamente significativa
+FannkuchRedux,11,pkg_energy_j,Permutation A/B (10000 perms),-9.588627,0.000000,True,one-sided (Linux < Windows),Linux usa 9.589 J menos que Windows (significativo)
+FannkuchRedux,11,dram_energy_j,Permutation A/B (10000 perms),0.165785,0.000000,True,two-sided,Diferença DRAM (0.1658 J) estatisticamente significativa
+FannkuchRedux,12,duration_ms,Mann-Whitney U,456.000000,0.000000,True,two-sided (Linux ≠ Windows),Linux é significativamente diferente de Windows em tempo
+FannkuchRedux,12,duration_ms,Mann-Whitney U,456.000000,0.000000,True,"one-sided (Linux > Windows, Linux é mais lento)",Linux é significativamente mais lento que Windows
+FannkuchRedux,12,pkg_energy_j,Mann-Whitney U,0.000000,0.000000,True,"one-sided (Linux < Windows, Linux consome menos)",Linux consome significativamente menos energia que Windows
+FannkuchRedux,12,dram_energy_j,Mann-Whitney U,456.000000,0.000000,True,two-sided (Linux ≠ Windows),Diferença significativa em energia DRAM
+FannkuchRedux,12,duration_ms,Permutation A/B (10000 perms),2370.014009,0.000000,True,two-sided,Diferença observada (2370.01 ms) estatisticamente significativa
+FannkuchRedux,12,pkg_energy_j,Permutation A/B (10000 perms),-49.273966,0.000000,True,one-sided (Linux < Windows),Linux usa 49.274 J menos que Windows (significativo)
+FannkuchRedux,12,dram_energy_j,Permutation A/B (10000 perms),2.496468,0.000000,True,two-sided,Diferença DRAM (2.4965 J) estatisticamente significativa
+BinaryTrees,16,duration_ms,Mann-Whitney U,9840.000000,0.000000,True,two-sided (Linux ≠ Windows),Linux é significativamente diferente de Windows em tempo
+BinaryTrees,16,duration_ms,Mann-Whitney U,9840.000000,0.000000,True,"one-sided (Linux > Windows, Linux é mais lento)",Linux é significativamente mais lento que Windows
+BinaryTrees,16,pkg_energy_j,Mann-Whitney U,0.000000,0.000000,True,"one-sided (Linux < Windows, Linux consome menos)",Linux consome significativamente menos energia que Windows
+BinaryTrees,16,dram_energy_j,Mann-Whitney U,4741.000000,0.662522,False,two-sided (Linux ≠ Windows),Sem diferença significativa em energia DRAM
+BinaryTrees,16,duration_ms,Permutation A/B (10000 perms),44.115342,0.000000,True,two-sided,Diferença observada (44.12 ms) estatisticamente significativa
+BinaryTrees,16,pkg_energy_j,Permutation A/B (10000 perms),-2.208786,0.000000,True,one-sided (Linux < Windows),Linux usa 2.209 J menos que Windows (significativo)
+BinaryTrees,16,dram_energy_j,Permutation A/B (10000 perms),-0.001771,0.466300,False,two-sided,Diferença DRAM (-0.0018 J) não significativa
+BinaryTrees,18,duration_ms,Mann-Whitney U,1078.000000,0.000000,True,two-sided (Linux ≠ Windows),Linux é significativamente diferente de Windows em tempo
+BinaryTrees,18,duration_ms,Mann-Whitney U,1078.000000,0.000000,True,"one-sided (Linux > Windows, Linux é mais lento)",Linux é significativamente mais lento que Windows
+BinaryTrees,18,pkg_energy_j,Mann-Whitney U,0.000000,0.000000,True,"one-sided (Linux < Windows, Linux consome menos)",Linux consome significativamente menos energia que Windows
+BinaryTrees,18,dram_energy_j,Mann-Whitney U,298.000000,0.002786,True,two-sided (Linux ≠ Windows),Diferença significativa em energia DRAM
+BinaryTrees,18,duration_ms,Permutation A/B (10000 perms),138.370891,0.000000,True,two-sided,Diferença observada (138.37 ms) estatisticamente significativa
+BinaryTrees,18,pkg_energy_j,Permutation A/B (10000 perms),-16.209969,0.000000,True,one-sided (Linux < Windows),Linux usa 16.210 J menos que Windows (significativo)
+BinaryTrees,18,dram_energy_j,Permutation A/B (10000 perms),-0.037230,0.004900,True,two-sided,Diferença DRAM (-0.0372 J) estatisticamente significativa
+FannkuchRedux,all,duration_ms vs pkg_energy_j,Spearman correlation (FannkuchRedux),0.595718,0.000000,True,two-sided,ρ = 0.596 — correlação significativa
+FannkuchRedux,all,duration_ms vs pkg_energy_j,Spearman correlation (FannkuchRedux linux),0.932755,0.000000,True,two-sided,ρ = 0.933 — correlação significativa para linux
+FannkuchRedux,all,duration_ms vs pkg_energy_j,Spearman correlation (FannkuchRedux windows),0.818200,0.000000,True,two-sided,ρ = 0.818 — correlação significativa para windows
+BinaryTrees,all,duration_ms vs pkg_energy_j,Spearman correlation (BinaryTrees),0.317957,0.000000,True,two-sided,ρ = 0.318 — correlação significativa
+BinaryTrees,all,duration_ms vs pkg_energy_j,Spearman correlation (BinaryTrees linux),0.842308,0.000000,True,two-sided,ρ = 0.842 — correlação significativa para linux
+BinaryTrees,all,duration_ms vs pkg_energy_j,Spearman correlation (BinaryTrees windows),0.721258,0.000000,True,two-sided,ρ = 0.721 — correlação significativa para windows
