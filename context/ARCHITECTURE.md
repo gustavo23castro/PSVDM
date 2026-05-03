@@ -24,16 +24,19 @@ CodeCarbon was evaluated and **rejected** for this project because:
 
 #### Linux
 ```
-/sys/class/powercap/intel-rapl/intel-rapl:0/energy_uj   ← Package energy (microjoules)
-/sys/class/powercap/intel-rapl/intel-rapl:0:0/energy_uj ← PP0 / cores
+/sys/devices/virtual/powercap/intel-rapl/intel-rapl:0/energy_uj                  ← Package energy (µJ)
+/sys/devices/virtual/powercap/intel-rapl/intel-rapl:0/intel-rapl:0:0/energy_uj   ← PP0 / cores
+/sys/devices/virtual/powercap/intel-rapl/intel-rapl:0/intel-rapl:0:2/energy_uj   ← DRAM
 ```
 Read before and after benchmark run. Delta = energy consumed in µJ.
+Use `/sys/devices/virtual/powercap/` — `/sys/class/powercap/` symlinks do NOT work for subdomain access on this machine.
 
 #### Windows
-- **Library**: `LibreHardwareMonitorLib` (NuGet)
+- **Library**: `LibreHardwareMonitorLib` (NuGet) — reads RAPL MSRs via WinRing0 kernel driver
 - **Version**: 0.9.x (supports .NET 9)
 - **Requires**: Run as Administrator
-- **Sensor path**: `Computer → CPU → Power (Watts)` — integrate over time to get Joules
+- **MSRs read**: `MSR_PKG_ENERGY_STATUS` (0x611), `MSR_PP0_ENERGY_STATUS` (0x639), `MSR_DRAM_ENERGY_STATUS` (0x619)
+- **Energy unit**: `MSR_RAPL_POWER_UNIT` (0x606) bits [12:8] — same multiplier for all three domains on Coffee Lake
 
 ---
 
@@ -56,9 +59,12 @@ csharp-energy-benchmark/
 │       └── FannkuchBenchmark/
 │           ├── FannkuchBenchmark.csproj   (.NET 9, Linux TFM)
 │           ├── Benchmarks/
-│           │   ├── FannkuchCore.cs          (Energy-Languages reference algorithm)
-│           │   └── FannkuchBenchmarks.cs    (BDN benchmark class)
+│           │   ├── FannkuchCore.cs          (Energy-Languages FannkuchRedux algorithm)
+│           │   ├── FannkuchBenchmarks.cs    (BDN benchmark class — CPU-bound)
+│           │   ├── BinaryTreesCore.cs       (Energy-Languages BinaryTrees algorithm)
+│           │   └── BinaryTreesBenchmark.cs  (BDN benchmark class — GC/memory-bound)
 │           ├── Energy/
+│           │   ├── IRaplReader.cs           (interface + RaplSnapshot struct)
 │           │   └── RaplLinux.cs             (powercap sysfs reader)
 │           └── Program.cs
 ├── results/
@@ -102,18 +108,33 @@ csharp-energy-benchmark/
 
 ## Benchmark Variants
 
-> **Algorithm:** Energy-Languages reference implementation
-> ([greensoftwarelab/Energy-Languages](https://github.com/greensoftwarelab/Energy-Languages/tree/master/CSharp/fannkuch-redux)).
+### FannkuchRedux (`FannkuchBenchmarks`)
+
+> Energy-Languages reference implementation
+> ([greensoftwarelab/Energy-Languages — CSharp/fannkuch-redux](https://github.com/greensoftwarelab/Energy-Languages/tree/master/CSharp/fannkuch-redux)).
 > Contributed by Isaac Gouy, transliterated from Oleg Mazurov's Java program;
 > concurrency fix and minor improvements by Peperud.
-> The algorithm is inherently multi-threaded (`Environment.ProcessorCount + 1` Task threads,
-> `NCHUNKS = 150` work-stealing chunks). `[Params(11, 12)]` — N=10 was dropped due to
-> thermal instability from short run duration.
+> Multi-threaded (`Environment.ProcessorCount + 1` Task threads, `NCHUNKS = 150` work-stealing chunks).
+> `[Params(11, 12)]` — N=10 dropped due to thermal instability from short run duration.
 
 | Variant | Description | Expected insight |
 |---|---|---|
 | `FannkuchBenchmarks_N11` | n=11 | Baseline JIT + energy signal |
 | `FannkuchBenchmarks_N12` | n=12 | Longer run, better statistical coverage |
+
+### BinaryTrees (`BinaryTreesBenchmark`)
+
+> Energy-Languages reference implementation
+> ([greensoftwarelab/Energy-Languages — CSharp/binary-trees](https://github.com/greensoftwarelab/Energy-Languages/tree/master/CSharp/binary-trees)).
+> Contributed by Marek Safar; concurrency added by Peperud.
+> Allocates and traverses recursive binary trees — GC-bound / memory-bound workload.
+> `[Params(16, 18)]` — N=16: ~0.8 s / ~227 MB; N=18: ~4 s / ~1 GB.
+> Energy CSV: `results/linux/energy/energy_bt.csv`.
+
+| Variant | Description | Expected insight |
+|---|---|---|
+| `BinaryTreesBenchmark_N16` | n=16 | Fast GC baseline, ~227 MB allocated |
+| `BinaryTreesBenchmark_N18` | n=18 | Heavier GC pressure, ~1 GB allocated |
 
 ---
 

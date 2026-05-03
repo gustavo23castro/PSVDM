@@ -11,9 +11,9 @@ namespace FannkuchBenchmark;
 [CsvMeasurementsExporter]
 [JsonExporter]
 [SupportedOSPlatform("linux")]
-public class FannkuchBenchmarks
+public class BinaryTreesBenchmark
 {
-    [Params(11, 12)]
+    [Params(16, 18)]
     public int N { get; set; }
 
     private IRaplReader? _rapl;
@@ -30,11 +30,11 @@ public class FannkuchBenchmarks
 
         var energyDir = FindResultsDir("energy");
         Directory.CreateDirectory(energyDir);
-        var csvPath = Path.Combine(energyDir, "energy_single.csv");
+        var csvPath = Path.Combine(energyDir, "energy_bt.csv");
         var isNew = !File.Exists(csvPath);
         _energyCsv = new StreamWriter(csvPath, append: true);
         if (isNew)
-            _energyCsv.WriteLine("timestamp,os,variant,n,thread_mode,iteration,pkg_energy_uj,pp0_energy_uj,dram_energy_uj,duration_ms,cpu_temp_before,cpu_temp_after");
+            _energyCsv.WriteLine("timestamp,os,variant,n,thread_mode,iteration,pkg_energy_uj,pp0_energy_uj,duration_ms,cpu_temp_before,cpu_temp_after");
     }
 
     [GlobalCleanup]
@@ -46,14 +46,14 @@ public class FannkuchBenchmarks
     }
 
     [Benchmark]
-    public (int, int) Run()
+    public (int, int, int[]) Run()
     {
         _iteration++;
         var tempBefore = ReadCpuTemp();
         var before = _rapl!.TakeSnapshot();
 
         var sw = Stopwatch.StartNew();
-        var result = FannkuchCore.Compute(N);
+        var result = BinaryTreesCore.Compute(N);
         sw.Stop();
 
         var after = _rapl!.TakeSnapshot();
@@ -65,13 +65,10 @@ public class FannkuchBenchmarks
         var pp0Delta = after.CoresMicrojoules >= before.CoresMicrojoules
             ? after.CoresMicrojoules - before.CoresMicrojoules
             : (_maxEnergyRange - before.CoresMicrojoules) + after.CoresMicrojoules;
-        var dramDelta = after.DramMicrojoules >= before.DramMicrojoules
-            ? after.DramMicrojoules - before.DramMicrojoules
-            : (_maxEnergyRange - before.DramMicrojoules) + after.DramMicrojoules;
 
         _energyCsv!.WriteLine(
-            $"{DateTime.UtcNow:o},linux,Fannkuch,{N},multi,{_iteration}," +
-            $"{pkgDelta},{pp0Delta},{dramDelta},{sw.Elapsed.TotalMilliseconds:F3}," +
+            $"{DateTime.UtcNow:o},linux,BinaryTrees,{N},multi,{_iteration}," +
+            $"{pkgDelta},{pp0Delta},{sw.Elapsed.TotalMilliseconds:F3}," +
             $"{tempBefore:F1},{tempAfter:F1}");
 
         return result;

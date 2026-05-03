@@ -10,9 +10,10 @@ namespace FannkuchBenchmark.Energy;
 // Requires the process to run as Administrator.
 public sealed class RaplWindows : IRaplReader, IDisposable
 {
-    private const uint MSR_RAPL_POWER_UNIT   = 0x606;
-    private const uint MSR_PKG_ENERGY_STATUS = 0x611;
-    private const uint MSR_PP0_ENERGY_STATUS = 0x639;
+    private const uint MSR_RAPL_POWER_UNIT    = 0x606;
+    private const uint MSR_PKG_ENERGY_STATUS  = 0x611;
+    private const uint MSR_PP0_ENERGY_STATUS  = 0x639;
+    private const uint MSR_DRAM_ENERGY_STATUS = 0x619;
 
     private readonly Computer   _computer;
     private readonly MethodInfo _readMsr;
@@ -64,11 +65,14 @@ public sealed class RaplWindows : IRaplReader, IDisposable
 
     public long ReadPackageEnergyMicrojoules() => ReadMsrMicrojoules(MSR_PKG_ENERGY_STATUS);
     public long ReadCoresEnergyMicrojoules()   => ReadMsrMicrojoules(MSR_PP0_ENERGY_STATUS);
+    // MSR_DRAM_ENERGY_STATUS uses the same energy unit as Package/PP0 on Coffee Lake.
+    public long ReadDramEnergyMicrojoules()    => ReadMsrMicrojoules(MSR_DRAM_ENERGY_STATUS);
 
     public RaplSnapshot TakeSnapshot() => new()
     {
         PackageMicrojoules = ReadPackageEnergyMicrojoules(),
         CoresMicrojoules   = ReadCoresEnergyMicrojoules(),
+        DramMicrojoules    = ReadDramEnergyMicrojoules(),
     };
 
     public void Dispose() => _computer.Close();

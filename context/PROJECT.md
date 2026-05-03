@@ -19,7 +19,9 @@ The work will produce:
 
 ---
 
-## Algorithm: FannkuchRedux
+## Benchmarks
+
+### FannkuchRedux
 
 - Source: [greensoftwarelab/Energy-Languages](https://github.com/greensoftwarelab/Energy-Languages/tree/master/CSharp/fannkuch-redux)
   — contributed by Isaac Gouy, transliterated from Oleg Mazurov's Java program; concurrency fix and minor improvements by Peperud
@@ -33,6 +35,21 @@ The work will produce:
   - N=10 dropped due to thermal instability from short run duration
   - Multi-thread-only algorithm (`Environment.ProcessorCount + 1` Task threads); no single-thread variant
 - Benchmark class: `FannkuchBenchmarks`, method `Run()`
+
+### BinaryTrees
+
+- Source: [greensoftwarelab/Energy-Languages](https://github.com/greensoftwarelab/Energy-Languages/tree/master/CSharp/binary-trees)
+  — contributed by Marek Safar; concurrency added by Peperud
+- Classification: GC-bound / memory-bound, recursive tree allocation
+- Why this benchmark:
+  - Complementary to FannkuchRedux: exercises GC and memory subsystem instead of pure CPU arithmetic
+  - Standard Computer Language Benchmarks Game benchmark
+  - Heavy heap allocation (hundreds of MB per run), stresses GC across generations
+- Variant benchmarked: N=16 and N=18 (`[Params(16, 18)]`)
+  - N=16: fast (~0.8 s, ~227 MB), N=18: medium (~4 s, ~1 GB)
+  - Multi-threaded: `Task.Run` parallelism with over-parallelisation for deep trees (depth > 18)
+- Benchmark class: `BinaryTreesBenchmark`, method `Run()`
+- Energy CSV: `results/linux/energy/energy_bt.csv`
 
 ---
 

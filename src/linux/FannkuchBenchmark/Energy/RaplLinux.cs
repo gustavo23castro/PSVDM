@@ -36,10 +36,12 @@ public sealed class RaplLinux : IRaplReader, IDisposable
     {
         PackageMicrojoules = ReadPackageEnergyMicrojoules(),
         CoresMicrojoules   = ReadCoresEnergyMicrojoules(),
+        DramMicrojoules    = ReadDramEnergyMicrojoules(),
     };
 
     public long ReadPackageEnergyMicrojoules() => ReadRaw(PathPackage);
     public long ReadCoresEnergyMicrojoules()   => ReadRaw(PathCore);
+    public long ReadDramEnergyMicrojoules()    => ReadRaw(PathDram);
 
     public void Dispose() { }
 

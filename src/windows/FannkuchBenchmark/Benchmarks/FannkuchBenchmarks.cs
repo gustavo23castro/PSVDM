@@ -43,7 +43,7 @@ public class FannkuchBenchmarks
         var isNew = !File.Exists(csvPath);
         _energyCsv = new StreamWriter(csvPath, append: true);
         if (isNew)
-            _energyCsv.WriteLine("timestamp,os,variant,n,thread_mode,iteration,pkg_energy_uj,pp0_energy_uj,duration_ms,cpu_temp_before,cpu_temp_after");
+            _energyCsv.WriteLine("timestamp,os,variant,n,thread_mode,iteration,pkg_energy_uj,pp0_energy_uj,dram_energy_uj,duration_ms,cpu_temp_before,cpu_temp_after");
     }
 
     [GlobalCleanup]
@@ -74,13 +74,16 @@ public class FannkuchBenchmarks
         var pp0Delta = after.CoresMicrojoules >= before.CoresMicrojoules
             ? after.CoresMicrojoules - before.CoresMicrojoules
             : (_maxEnergyRange - before.CoresMicrojoules) + after.CoresMicrojoules;
+        var dramDelta = after.DramMicrojoules >= before.DramMicrojoules
+            ? after.DramMicrojoules - before.DramMicrojoules
+            : (_maxEnergyRange - before.DramMicrojoules) + after.DramMicrojoules;
 
         // Force invariant culture: pt-PT uses ',' as the decimal separator, which
         // would clash with the CSV field delimiter and corrupt the output.
         var inv = CultureInfo.InvariantCulture;
         _energyCsv!.WriteLine(
             $"{DateTime.UtcNow:o},windows,Fannkuch,{N},multi,{_iteration}," +
-            $"{pkgDelta},{pp0Delta},{sw.Elapsed.TotalMilliseconds.ToString("F3", inv)}," +
+            $"{pkgDelta},{pp0Delta},{dramDelta},{sw.Elapsed.TotalMilliseconds.ToString("F3", inv)}," +
             $"{tempBefore.ToString("F1", inv)},{tempAfter.ToString("F1", inv)}");
 
         return result;

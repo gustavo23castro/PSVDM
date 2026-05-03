@@ -54,28 +54,38 @@ public class FannkuchSingleThread
 Both platforms expose the same interface:
 
 ```csharp
-// Energy/IRaplReader.cs (shared interface)
+// Energy/IRaplReader.cs (shared interface + snapshot struct)
+public readonly struct RaplSnapshot
+{
+    public long PackageMicrojoules { get; init; }
+    public long CoresMicrojoules   { get; init; }
+    public long DramMicrojoules    { get; init; }
+}
+
 public interface IRaplReader
 {
     long ReadPackageEnergyMicrojoules();
     long ReadCoresEnergyMicrojoules();
+    long ReadDramEnergyMicrojoules();
+    RaplSnapshot TakeSnapshot(); // captures Package, PP0 (cores), and DRAM
     void Dispose();
 }
 ```
 
-Usage pattern — always wrap in try/finally:
+Usage pattern — use `TakeSnapshot()` to read all three domains atomically:
 
 ```csharp
-var rapl = RaplReaderFactory.Create(); // returns platform-specific impl
-var before = rapl.ReadPackageEnergyMicrojoules();
+var rapl = new RaplLinux(); // or new RaplWindows()
+var before = rapl.TakeSnapshot();
 // ... run workload ...
-var after = rapl.ReadPackageEnergyMicrojoules();
-var joules = (after - before) / 1_000_000.0;
+var after = rapl.TakeSnapshot();
+var pkgJoules  = (after.PackageMicrojoules - before.PackageMicrojoules) / 1_000_000.0;
+var dramJoules = (after.DramMicrojoules    - before.DramMicrojoules)    / 1_000_000.0;
 ```
 
 > ⚠️ RAPL counters wrap around (32-bit accumulator). For Coffee Lake the wrap period
 > is ~60 seconds at full load. Always check `after >= before`; if not, add the max counter value.
-> Max value is in `/sys/class/powercap/intel-rapl/intel-rapl:0/max_energy_range_uj` on Linux.
+> Max value is in `/sys/devices/virtual/powercap/intel-rapl/intel-rapl:0/max_energy_range_uj` on Linux.
 
 ---
 
@@ -97,8 +107,8 @@ results/
 
 Energy CSV format:
 ```
-timestamp,os,variant,n,thread_mode,iteration,pkg_energy_uj,pp0_energy_uj,duration_ms,cpu_temp_before,cpu_temp_after
-2025-01-15T14:32:00,linux,FannkuchST,11,single,1,45231000,38120000,1823,52.0,67.0
+timestamp,os,variant,n,thread_mode,iteration,pkg_energy_uj,pp0_energy_uj,dram_energy_uj,duration_ms,cpu_temp_before,cpu_temp_after
+2025-01-15T14:32:00,linux,FannkuchST,11,single,1,45231000,38120000,1250000,1823,52.0,67.0
 ```
 
 ---
