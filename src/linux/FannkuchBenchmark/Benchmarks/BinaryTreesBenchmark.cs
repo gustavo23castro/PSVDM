@@ -1,13 +1,11 @@
 using System.Diagnostics;
 using System.Runtime.Versioning;
 using BenchmarkDotNet.Attributes;
-using BenchmarkDotNet.Jobs;
 using FannkuchBenchmark.Energy;
 
 namespace FannkuchBenchmark;
 
 [MemoryDiagnoser]
-[SimpleJob(RuntimeMoniker.Net90)]
 [CsvMeasurementsExporter]
 [JsonExporter]
 [SupportedOSPlatform("linux")]
@@ -34,7 +32,7 @@ public class BinaryTreesBenchmark
         var isNew = !File.Exists(csvPath);
         _energyCsv = new StreamWriter(csvPath, append: true);
         if (isNew)
-            _energyCsv.WriteLine("timestamp,os,variant,n,thread_mode,iteration,pkg_energy_uj,pp0_energy_uj,duration_ms,cpu_temp_before,cpu_temp_after");
+            _energyCsv.WriteLine("timestamp,os,variant,n,thread_mode,iteration,pkg_energy_uj,pp0_energy_uj,dram_energy_uj,duration_ms,cpu_temp_before,cpu_temp_after");
     }
 
     [GlobalCleanup]
@@ -65,10 +63,13 @@ public class BinaryTreesBenchmark
         var pp0Delta = after.CoresMicrojoules >= before.CoresMicrojoules
             ? after.CoresMicrojoules - before.CoresMicrojoules
             : (_maxEnergyRange - before.CoresMicrojoules) + after.CoresMicrojoules;
+        var dramDelta = after.DramMicrojoules >= before.DramMicrojoules
+            ? after.DramMicrojoules - before.DramMicrojoules
+            : (_maxEnergyRange - before.DramMicrojoules) + after.DramMicrojoules;
 
         _energyCsv!.WriteLine(
             $"{DateTime.UtcNow:o},linux,BinaryTrees,{N},multi,{_iteration}," +
-            $"{pkgDelta},{pp0Delta},{sw.Elapsed.TotalMilliseconds:F3}," +
+            $"{pkgDelta},{pp0Delta},{dramDelta},{sw.Elapsed.TotalMilliseconds:F3}," +
             $"{tempBefore:F1},{tempAfter:F1}");
 
         return result;

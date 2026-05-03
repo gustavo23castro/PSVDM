@@ -1,13 +1,11 @@
 using System.Diagnostics;
 using System.Runtime.Versioning;
 using BenchmarkDotNet.Attributes;
-using BenchmarkDotNet.Jobs;
 using FannkuchBenchmark.Energy;
 
 namespace FannkuchBenchmark;
 
 [MemoryDiagnoser]
-[SimpleJob(RuntimeMoniker.Net90)]
 [CsvMeasurementsExporter]
 [JsonExporter]
 [SupportedOSPlatform("linux")]
