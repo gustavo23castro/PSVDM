@@ -1,5 +1,0 @@
-timestamp,os,variant,n,thread_mode,iteration,pkg_energy_uj,pp0_energy_uj,duration_ms,cpu_temp_before,cpu_temp_after
-2026-05-03T10:59:59.3798787Z,linux,BinaryTrees,16,multi,1,3533194,2341790,784.279,48.0,42.0
-2026-05-03T11:00:00.2421520Z,linux,BinaryTrees,16,multi,2,3743338,2479669,803.848,42.0,42.0
-2026-05-03T11:00:04.5801753Z,linux,BinaryTrees,18,multi,1,20943244,14385950,4188.111,44.0,42.0
-2026-05-03T11:00:08.2267881Z,linux,BinaryTrees,18,multi,2,25122799,19308727,3608.263,42.0,62.0
