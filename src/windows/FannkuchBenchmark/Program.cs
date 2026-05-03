@@ -3,6 +3,7 @@ using BenchmarkDotNet.Jobs;
 using BenchmarkDotNet.Running;
 using BenchmarkDotNet.Toolchains.InProcess.Emit;
 
+
 // All jobs run in-process. BDN's default child-process toolchain breaks the
 // LibreHardwareMonitorLib WinRing0 driver install (the deeply-nested BDN-
 // generated build dir is the trigger — temperature, clock and power MSR
@@ -28,8 +29,14 @@ for (int i = 0; i < args.Length; i++)
     filteredArgs.Add(args[i]);
 }
 
+var job = selectedJob
+    .WithToolchain(new InProcessEmitToolchain(TimeSpan.FromMinutes(5), false))
+    
+    .WithMaxRelativeError(0.02);
+
 var config = DefaultConfig.Instance
-    .AddJob(selectedJob.WithToolchain(InProcessEmitToolchain.Instance))
+    .AddJob(job)
+    .WithOption(ConfigOptions.DisableOptimizationsValidator, true)
     .WithArtifactsPath(Path.Combine("..", "..", "..", "..", "results", "windows", "BenchmarkDotNet.Artifacts"));
 
 BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(filteredArgs.ToArray(), config);
